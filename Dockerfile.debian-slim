@@ -1,0 +1,36 @@
+FROM golang:1.15rc1-buster as build
+
+RUN mkdir /registry
+ADD . /src/github.com/erikvanbrakel/anthology
+
+WORKDIR /src/github.com/erikvanbrakel/anthology
+
+ENV GOPATH /
+
+RUN go build && cp ./anthology /registry/anthology
+
+FROM debian:buster-slim as test
+
+#RUN apk update && apk add ca-certificates && rm -rf /var/cache/apk/*
+RUN apt-get update -y && apt-get install -y ca-certificates
+
+COPY --from=build /src/github.com/erikvanbrakel/anthology/anthology /registry/anthology
+
+WORKDIR /registry
+
+EXPOSE 8082
+
+CMD ["--port=8082","--filesystem.basepath=/modules","--backend=filesystem"]
+ENTRYPOINT ["./anthology"]
+
+# FROM scratch
+
+# COPY --from=test /registry/anthology /registry/anthology
+
+# WORKDIR /registry
+
+# EXPOSE 8082
+
+# CMD ["--port=8082","--filesystem.basepath=/modules","--backend=filesystem"]
+
+# ENTRYPOINT ["./anthology"]
